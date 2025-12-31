@@ -7,7 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "Alina_TSNCharacter.generated.h"
 
-class USpringArmComponent;
+class USpringArmComponent; class ATotem;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
@@ -32,20 +32,24 @@ class AAlina_TSNCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
 
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* JumpAction;
-
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
-	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* LookAction;
+	UInputAction* InteractAction;
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	float GetInteractionPercentage() const;
 
 public:
 	AAlina_TSNCharacter();
+
+	UFUNCTION(BlueprintCallable)
+	void IncreaseScoreBy(int num);
+
+	UFUNCTION(BlueprintCallable)
+	int GetScore() const;
 	
 
 protected:
@@ -53,15 +57,22 @@ protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
-	/** Called for looking input */
-	void Look(const FInputActionValue& Value);
+	void Interact();
 			
 
 protected:
 
+	virtual void BeginPlay() override;
+
 	virtual void NotifyControllerChanged() override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	int Score;
+
+	FTimerHandle InteractionTimerHandle;
+
+	ATotem* Totem;
 
 public:
 	/** Returns CameraBoom subobject **/

@@ -76,10 +76,13 @@ DerivedDataCache/*
 
 # Heavy assets (excluded for portfolio)
 Content/ThirdPerson/Input/
-Content/StarterContent/
+Content/ThirdPerson/3D_Model/
+Content/ThirdPerson/Material/
+Content/ThirdPerson/UI_UX/
+Content/Characters/
 Content/LevelPrototyping/
+Content/StarterContent/
 Content/Developers/
 Content/Collections/
-Content/Characters/
-Content/_ExternalActors_/
-Content/_ExternalObjects_/
+Content/__ExternalActors__/
+Content/__ExternalObjects__/

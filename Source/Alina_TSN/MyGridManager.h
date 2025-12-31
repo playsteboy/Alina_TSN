@@ -15,11 +15,35 @@ public:
 	// Sets default values for this actor's properties
 	AMyGridManager();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
-	int32 GridSizeX;
+	UFUNCTION(BlueprintCallable)
+	void SpawnAtTile(const FIntPoint& Position, TSubclassOf<AActor> ActorToSpawn);
+
+	UFUNCTION(BlueprintCallable)
+	FIntPoint GetRandomFreeTile();
+
+	UFUNCTION(BlueprintCallable)
+	void OccupyTile(const FIntPoint& Tile, AActor* Actor);
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetTileWorldLocation(const FIntPoint& Tile) const;
+
+	UFUNCTION(BlueprintCallable)
+	void ResetGrid();
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnRandomActors(TSubclassOf<AActor> ActorClass, int32 Count);
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnAllGameplayActors();
+
+	UFUNCTION(BlueprintCallable)
+	FBox GetGridBounds() const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
-	int32 GridSizeY;
+	int32 Width;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
+	int32 Height;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	float CellSize;
@@ -27,13 +51,24 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UInstancedStaticMeshComponent* CellMesh;
 
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TSubclassOf<AActor> OrbClass;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 OrbCount;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TSubclassOf<AActor> TotemClass;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 TotemCount;
+
+
+	bool bGridReady;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 private:
 	TMap<FIntPoint, FMyGridCell> GridCells;
