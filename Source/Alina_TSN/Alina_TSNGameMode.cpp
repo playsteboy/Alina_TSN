@@ -4,6 +4,8 @@
 #include "Alina_TSNCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 #include "MyGridManager.h"
+#include "Alina_TSNCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 AAlina_TSNGameMode::AAlina_TSNGameMode()
 {
@@ -18,6 +20,7 @@ AAlina_TSNGameMode::AAlina_TSNGameMode()
     {
         MyGridManagerClass = MyGridManagerBPClass.Class;
     }
+	bGameFinished = false;
 }
 void AAlina_TSNGameMode::BeginPlay()
 {
@@ -34,14 +37,26 @@ void AAlina_TSNGameMode::BeginPlay()
     {
         RestartPlayer(PC);
     }
-
+	
 }
 void AAlina_TSNGameMode::RestartPlayer(AController* NewPlayer)
 {
     if (!NewPlayer || !MyGridManager || !MyGridManager->bGridReady)
-    {
         return;
+
+    TArray<AActor*> FoundPawns;
+    UGameplayStatics::GetAllActorsOfClass(
+        GetWorld(),
+        AAlina_TSNCharacter::StaticClass(),
+        FoundPawns
+    );
+
+    for (AActor* Actor : FoundPawns)
+    {
+        Actor->Destroy();
     }
+
+    bGameFinished = false;
 
     MyGridManager->ResetGrid();
     MyGridManager->SpawnAllGameplayActors();
@@ -49,17 +64,27 @@ void AAlina_TSNGameMode::RestartPlayer(AController* NewPlayer)
     FIntPoint PlayerTile = MyGridManager->GetRandomFreeTile();
     FVector SpawnLocation = MyGridManager->GetTileWorldLocation(PlayerTile);
 
+    if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
+    {
+        PC->SetInputMode(FInputModeGameOnly());
+        PC->bShowMouseCursor = false;
+    }
+
     APawn* Pawn = SpawnDefaultPawnAtTransform(
         NewPlayer,
         FTransform(FRotator::ZeroRotator, SpawnLocation)
     );
-
-    if (Pawn)
+    
+    NewPlayer->Possess(Pawn);
+    if (AAlina_TSNCharacter* MC = Cast<AAlina_TSNCharacter>(Pawn))
     {
-        NewPlayer->Possess(Pawn);
-        MyGridManager->OccupyTile(PlayerTile, Pawn);
+        MC->ResetScore();
     }
+    MyGridManager->OccupyTile(PlayerTile, Pawn);
 }
+
+
+
 void AAlina_TSNGameMode::FinishGame() {
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
@@ -70,6 +95,8 @@ void AAlina_TSNGameMode::FinishGame() {
             PC->bShowMouseCursor = true;
 
             PC->UnPossess();
+
+			bGameFinished = true;
         }
     }
 }

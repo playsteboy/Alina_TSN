@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Totem.h"
 #include "Orb.h"
+#include "Components/BoxComponent.h"
 // Sets default values
 AMyGridManager::AMyGridManager()
 {
@@ -20,10 +21,33 @@ AMyGridManager::AMyGridManager()
 	Height = 100;
 	CellSize = 100.0f;
 
+	WallLeft = CreateDefaultSubobject<UBoxComponent>(TEXT("WallLeft"));
+	WallRight = CreateDefaultSubobject<UBoxComponent>(TEXT("WallRight"));
+	WallTop = CreateDefaultSubobject<UBoxComponent>(TEXT("WallTop"));
+	WallBottom = CreateDefaultSubobject<UBoxComponent>(TEXT("WallBottom"));
+
+	WallLeft->SetupAttachment(RootComponent);
+	WallRight->SetupAttachment(RootComponent);
+	WallTop->SetupAttachment(RootComponent);
+	WallBottom->SetupAttachment(RootComponent);
+
+	WallLeft->SetCollisionProfileName(TEXT("BlockAll"));
+	WallRight->SetCollisionProfileName(TEXT("BlockAll"));
+	WallTop->SetCollisionProfileName(TEXT("BlockAll"));
+	WallBottom->SetCollisionProfileName(TEXT("BlockAll"));
+
+	WallLeft->SetHiddenInGame(true);
+	WallRight->SetHiddenInGame(true);
+	WallTop->SetHiddenInGame(true);
+	WallBottom->SetHiddenInGame(true);
+
 	bGridReady = false;
 
 	OrbCount = 5;
 	TotemCount = 1;
+
+	RockCount = 15;
+
 
 }
 
@@ -61,33 +85,78 @@ void AMyGridManager::BeginPlay()
 	}
 	bGridReady = true;
 	
+	const float GridWidthWorld = Width * CellSize;
+	const float GridHeightWorld = Height * CellSize;
+
+	const float WallThickness = 50.f;
+	const float WallHeight = 300.f;
+
+	const FVector Origin = GetActorLocation();
+	WallLeft->SetBoxExtent(FVector(WallThickness, GridHeightWorld * 0.5f, WallHeight));
+	WallLeft->SetWorldLocation(Origin + FVector(
+		-WallThickness,
+		GridHeightWorld * 0.5f,
+		WallHeight
+	));
+
+	WallRight->SetBoxExtent(FVector(WallThickness, GridHeightWorld * 0.5f, WallHeight));
+	WallRight->SetWorldLocation(Origin + FVector(
+		GridWidthWorld + WallThickness,
+		GridHeightWorld * 0.5f,
+		WallHeight
+	));
+
+	WallBottom->SetBoxExtent(FVector(GridWidthWorld * 0.5f, WallThickness, WallHeight));
+	WallBottom->SetWorldLocation(Origin + FVector(
+		GridWidthWorld * 0.5f,
+		-WallThickness,
+		WallHeight
+	));
+
+	WallTop->SetBoxExtent(FVector(GridWidthWorld * 0.5f, WallThickness, WallHeight));
+	WallTop->SetWorldLocation(Origin + FVector(
+		GridWidthWorld * 0.5f,
+		GridHeightWorld + WallThickness,
+		WallHeight
+	));
+
 }
 
 void AMyGridManager::SpawnAtTile(const FIntPoint& Position, TSubclassOf<AActor> ActorToSpawn)
 {
-	if (GridCells.Contains(Position))
+	if (!GridCells.Contains(Position)) return;
+
+	FMyGridCell& TargetTile = GridCells[Position];
+
+	if (TargetTile.bIsOccupied) return;
+
+	TargetTile.bIsOccupied = true;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride =
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(
+		ActorToSpawn,
+		TargetTile.WorldLocation,
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
+
+	if (!SpawnedActor)
 	{
-		FMyGridCell& TargetTile = GridCells[Position];
-		if (!TargetTile.bIsOccupied)
-		{
-			FVector SpawnLocation = TargetTile.WorldLocation;
-
-			FActorSpawnParameters SpawnParams;
-			AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(ActorToSpawn, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-
-			if (SpawnedActor)
-			{
-				FVector Origin;
-				FVector BoxExtent;
-				SpawnedActor->GetActorBounds(false, Origin, BoxExtent);
-				SpawnLocation.Z += BoxExtent.Z;
-				SpawnedActor->SetActorLocation(SpawnLocation);
-
-				TargetTile.bIsOccupied = true;
-				TargetTile.Occupant = SpawnedActor;
-			}
-		}
+		TargetTile.bIsOccupied = false;
+		return;
 	}
+
+	FVector Origin, BoxExtent;
+	SpawnedActor->GetActorBounds(false, Origin, BoxExtent);
+
+	FVector AdjustedLocation = TargetTile.WorldLocation;
+	AdjustedLocation.Z += BoxExtent.Z;
+	SpawnedActor->SetActorLocation(AdjustedLocation);
+
+	TargetTile.Occupant = SpawnedActor;
 }
 
 FIntPoint AMyGridManager::GetRandomFreeTile()
@@ -143,10 +212,13 @@ void AMyGridManager::ResetGrid()
 	{
 		if (Actor && Actor != this)
 		{
-			if (Actor->IsA(AOrb::StaticClass()) || Actor->IsA(ATotem::StaticClass()))
+			if (Actor->IsA(AOrb::StaticClass()) ||
+				Actor->IsA(ATotem::StaticClass()) ||
+				Actor->IsA(RockClass))
 			{
 				Actor->Destroy();
 			}
+
 		}
 	}
 }
@@ -171,12 +243,5 @@ void AMyGridManager::SpawnAllGameplayActors()
 {
 	SpawnRandomActors(OrbClass, OrbCount);
 	SpawnRandomActors(TotemClass, TotemCount);
+	SpawnRandomActors(RockClass, RockCount);
 }
-
-FBox AMyGridManager::GetGridBounds() const
-{
-	FVector Origin = GetActorLocation();
-	FVector Max = Origin + FVector(Width * CellSize, Height * CellSize, 500.0f);
-	return FBox(Origin, Max);
-}
-

@@ -6,59 +6,68 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
-#include "CollisionShape.h"
 #include "Components/BoxComponent.h"
 ATotem::ATotem()
 {
     PrimaryActorTick.bCanEverTick = true;
     CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
-    RootComponent = CollisionBox;
-    Radius = 1.0f;
+	RootComponent = CollisionBox;
+
+    bIsInZone = false;
     MC = nullptr;
 }
 
 void ATotem::BeginPlay()
 {
     Super::BeginPlay();
+    CollisionBox->SetCollisionProfileName(TEXT("Trigger"));
+    CollisionBox->SetGenerateOverlapEvents(true);
+
+    CollisionBox->OnComponentBeginOverlap.AddDynamic(
+        this, &ATotem::OnZoneEnter);
+
+    CollisionBox->OnComponentEndOverlap.AddDynamic(
+        this, &ATotem::OnZoneExit);
+
     MC = Cast<AAlina_TSNCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AAlina_TSNCharacter::StaticClass()));
 }
 
 void ATotem::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    if (!MC)
+
+}
+
+
+void ATotem::OnZoneEnter(
+    UPrimitiveComponent*,
+    AActor* OtherActor,
+    UPrimitiveComponent*,
+    int32,
+    bool,
+    const FHitResult&)
+{
+    AAlina_TSNCharacter* Player = Cast<AAlina_TSNCharacter>(OtherActor);
+    if (Player && Player->GetScore() == 5)
     {
-        MC = Cast<AAlina_TSNCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AAlina_TSNCharacter::StaticClass()));
-    }
-    if (MC && MC->GetScore() == 5) {
-        DetectInZone();
-    }
-}
-
-
-void ATotem::DetectInZone() {
-    TArray<FOverlapResult> Overlaps;
-    FVector Position = GetActorLocation();
-    FCollisionShape Shape = FCollisionShape::MakeSphere(Radius);
-
-    bool bOverlap = GetWorld()->OverlapMultiByChannel(
-        Overlaps,
-        Position,
-        FQuat::Identity,
-        ECC_Pawn,
-        Shape
-    );
-
-    FCollisionQueryParams QueryParams;
-    QueryParams.AddIgnoredActor(this);
-
-    if (Overlaps.Num() > 0) {
         bIsInZone = true;
+        Player->CurrentTotem = this;
+
     }
-    else {
-        bIsInZone = false;
-    }
-    
-	
 }
+void ATotem::OnZoneExit(
+    UPrimitiveComponent*,
+    AActor* OtherActor,
+    UPrimitiveComponent*,
+    int32)
+{
+    if (AAlina_TSNCharacter* Player = Cast<AAlina_TSNCharacter>(OtherActor))
+    {
+        bIsInZone = false;
+        Player->CurrentTotem = nullptr;
+
+    }
+}
+
+
 

@@ -21,11 +21,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FinishGame();
 
+	virtual void RestartPlayer(AController* NewPlayer) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bGameFinished;
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	virtual void RestartPlayer(AController* NewPlayer) override;
 
 	AMyGridManager* MyGridManager;
 

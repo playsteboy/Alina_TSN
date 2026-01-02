@@ -15,14 +15,30 @@ public:
 	// Sets default values for this actor's properties
 	ATotem();
 
-	UPROPERTY(BlueprintReadWrite)
-	float Radius;
-
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Interaction")
 	bool bIsInZone;
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBoxComponent* CollisionBox;
+
+	UFUNCTION()
+	void OnZoneEnter(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
+
+	UFUNCTION()
+	void OnZoneExit(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
 
 protected:
 	// Called when the game starts or when spawned
@@ -33,7 +49,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	void DetectInZone();
+	
 
 	AAlina_TSNCharacter* MC;
 

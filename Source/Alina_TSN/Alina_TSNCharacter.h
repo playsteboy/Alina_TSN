@@ -42,14 +42,21 @@ class AAlina_TSNCharacter : public ACharacter
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	float GetInteractionPercentage() const;
 
+
 public:
 	AAlina_TSNCharacter();
 
 	UFUNCTION(BlueprintCallable)
 	void IncreaseScoreBy(int num);
 
+	UFUNCTION()
+	void ResetScore();
+
 	UFUNCTION(BlueprintCallable)
 	int GetScore() const;
+
+	ATotem* CurrentTotem;
+
 	
 
 protected:
@@ -58,6 +65,8 @@ protected:
 	void Move(const FInputActionValue& Value);
 
 	void Interact();
+
+	void StopInteract();
 			
 
 protected:
@@ -72,7 +81,6 @@ protected:
 
 	FTimerHandle InteractionTimerHandle;
 
-	ATotem* Totem;
 
 public:
 	/** Returns CameraBoom subobject **/

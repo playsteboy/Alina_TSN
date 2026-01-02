@@ -35,7 +35,7 @@ AAlina_TSNCharacter::AAlina_TSNCharacter()
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = 750.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
@@ -58,7 +58,7 @@ AAlina_TSNCharacter::AAlina_TSNCharacter()
 // Input
 void AAlina_TSNCharacter::BeginPlay() {
 	Super::BeginPlay();
-	Totem = Cast<ATotem>(UGameplayStatics::GetActorOfClass(GetWorld(), ATotem::StaticClass()));
+	CurrentTotem = Cast<ATotem>(UGameplayStatics::GetActorOfClass(GetWorld(), ATotem::StaticClass()));
 }
 void AAlina_TSNCharacter::NotifyControllerChanged()
 {
@@ -80,7 +80,10 @@ void AAlina_TSNCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAlina_TSNCharacter::Move);
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AAlina_TSNCharacter::Interact);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AAlina_TSNCharacter::Interact);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &AAlina_TSNCharacter::StopInteract);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Canceled, this, &AAlina_TSNCharacter::StopInteract);
+
 	}
 	else
 	{
@@ -103,25 +106,6 @@ void AAlina_TSNCharacter::Move(const FInputActionValue& Value)
 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
-
-		AMyGridManager* GridManager = Cast<AMyGridManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AMyGridManager::StaticClass()));
-
-		if (GridManager)
-		{
-			FBox Bounds = GridManager->GetGridBounds();
-			FVector CurrentLocation = GetActorLocation();
-
-			float Margin = 50.0f;
-			FVector ClampedLocation = CurrentLocation;
-
-			ClampedLocation.X = FMath::Clamp(CurrentLocation.X, Bounds.Min.X + Margin, Bounds.Max.X - Margin);
-			ClampedLocation.Y = FMath::Clamp(CurrentLocation.Y, Bounds.Min.Y + Margin, Bounds.Max.Y - Margin);
-
-			if (CurrentLocation != ClampedLocation)
-			{
-				SetActorLocation(ClampedLocation);
-			}
-		}
 	}
 }
 
@@ -133,24 +117,32 @@ int AAlina_TSNCharacter::GetScore() const {
 	return Score;
 }
 
-void AAlina_TSNCharacter::Interact() {
-	if (Totem) {
-		if (Totem->bIsInZone) {
-			GetCharacterMovement()->DisableMovement();
+void AAlina_TSNCharacter::Interact()
+{
+	if (!CurrentTotem) return;
 
-			AAlina_TSNGameMode* GM = GetWorld()->GetAuthGameMode<AAlina_TSNGameMode>();
-			if (GM) {
-				GetWorldTimerManager().SetTimer(
-					InteractionTimerHandle,
-					GM,      
-					&AAlina_TSNGameMode::FinishGame,
-					5.0f,
-					false
-				);
-			}
+	if (GetWorldTimerManager().IsTimerActive(InteractionTimerHandle))
+		return;
+
+	if (Score == 5 && CurrentTotem->bIsInZone) {
+		GetCharacterMovement()->DisableMovement();
+
+		AAlina_TSNGameMode* GM = GetWorld()->GetAuthGameMode<AAlina_TSNGameMode>();
+		if (GM)
+		{
+			GetWorldTimerManager().SetTimer(
+				InteractionTimerHandle,
+				GM,
+				&AAlina_TSNGameMode::FinishGame,
+				5.f,
+				false
+			);
 		}
 	}
 }
+
+
+
 float AAlina_TSNCharacter::GetInteractionPercentage() const
 {
 	if (GetWorldTimerManager().IsTimerActive(InteractionTimerHandle))
@@ -160,4 +152,16 @@ float AAlina_TSNCharacter::GetInteractionPercentage() const
 		return (TotalTime - Remaining) / TotalTime;
 	}
 	return 0.0f;
+}
+
+void AAlina_TSNCharacter::StopInteract()
+{
+	if (GetWorldTimerManager().IsTimerActive(InteractionTimerHandle))
+	{
+		GetWorldTimerManager().ClearTimer(InteractionTimerHandle);
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	}
+}
+void AAlina_TSNCharacter::ResetScore() {
+	Score = 0;
 }

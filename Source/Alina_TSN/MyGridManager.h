@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MyGridManager.generated.h"
-class UInstancedStaticMeshComponent;
+class UInstancedStaticMeshComponent; class UBoxComponent;
 UCLASS()
 class ALINA_TSN_API AMyGridManager : public AActor
 {
@@ -36,9 +36,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnAllGameplayActors();
 
-	UFUNCTION(BlueprintCallable)
-	FBox GetGridBounds() const;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	int32 Width;
 
@@ -51,6 +48,18 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UInstancedStaticMeshComponent* CellMesh;
 
+	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* WallLeft;
+
+	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* WallRight;
+
+	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* WallTop;
+
+	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* WallBottom;
+
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	TSubclassOf<AActor> OrbClass;
 
@@ -62,6 +71,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	int32 TotemCount;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TSubclassOf<AActor> RockClass;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 RockCount;
 
 
 	bool bGridReady;
