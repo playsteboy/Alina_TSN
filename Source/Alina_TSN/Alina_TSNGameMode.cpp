@@ -25,7 +25,6 @@ AAlina_TSNGameMode::AAlina_TSNGameMode()
 	bPlayerWon = false;
 	TimeRemaining = 99.f;
 	TotalScore = 0.f;
-	TimeElapsed = 0.f;
 }
 void AAlina_TSNGameMode::BeginPlay()
 {
@@ -144,7 +143,6 @@ void AAlina_TSNGameMode::UpdateTimer()
     if (bGameFinished)
         return;
     TimeRemaining -= 1.0f;
-	TimeElapsed += 1.0f;
     TotalScore = TimeRemaining;
     if (TimeRemaining <= 0.0f)
     {
@@ -176,19 +174,13 @@ float AAlina_TSNGameMode::CalculateFinalScore()
         float MaxHealth = static_cast<float>(PlayerCharacter->GetMaxHealth());
         float CurrentHealth = static_cast<float>(PlayerCharacter->GetHealth());
 		float WinScore = bPlayerWon ? 100.0f : 0.0f;
-        float HealthPerc = (MaxHealth > 0.0f) ? (CurrentHealth / MaxHealth) * 100.0f : 0.0f;
+        float HealthPerc = 0.0f;
         float TimePerc = 0.0f;
         if (bPlayerWon) {
+            HealthPerc = (MaxHealth > 0.0f) ? (CurrentHealth / MaxHealth) * 100.0f : 0.0f;
             if (TimeRemainingSave > 0.0f)
             {
                 TimePerc = (TimeRemaining / TimeRemainingSave) * 100.0f;
-                TimePerc = FMath::Clamp(TimePerc, 0.0f, 100.0f);
-            }
-        }
-        else {
-            if (TimeRemainingSave > 0.0f)
-            {
-                TimePerc = (TimeElapsed / TimeRemainingSave) * 100.0f;
                 TimePerc = FMath::Clamp(TimePerc, 0.0f, 100.0f);
             }
         }

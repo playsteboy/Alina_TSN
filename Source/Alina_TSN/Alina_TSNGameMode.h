@@ -53,8 +53,6 @@ private:
 
 	float TimeRemainingSave;
 
-	float TimeElapsed;
-
 	
 };
 
