@@ -78,6 +78,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	int32 RockCount;
 
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TSubclassOf<AActor> AreaDmgPillarClass;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 AreaDmgPillarCount;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TSubclassOf<AActor> DamageZoneClass;
+
 
 	bool bGridReady;
 

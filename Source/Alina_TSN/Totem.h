@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
+#include "MyStructure.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Totem.generated.h"
 class AAlina_TSNCharacter; class UBoxComponent;
 UCLASS()
-class ALINA_TSN_API ATotem : public AActor
+class ALINA_TSN_API ATotem : public AMyStructure
 {
 	GENERATED_BODY()
 	

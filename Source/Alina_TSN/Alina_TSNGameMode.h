@@ -25,12 +25,35 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bGameFinished;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timer")
+	float TimeRemaining;
+
+	UFUNCTION(BlueprintCallable)
+	float GetTimeRemaining() const;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bPlayerWon;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Score")
+	float TotalScore;
+
+	UFUNCTION(BlueprintCallable, Category = "Score")
+	float CalculateFinalScore();
 protected:
 	virtual void BeginPlay() override;
+
+	FTimerHandle TimerHandle_Mission;
+
+	void UpdateTimer();
 
 private:
 
 	AMyGridManager* MyGridManager;
+
+	float TimeRemainingSave;
+
+	float TimeElapsed;
 
 	
 };

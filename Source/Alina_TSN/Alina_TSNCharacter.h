@@ -7,7 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "Alina_TSNCharacter.generated.h"
 
-class USpringArmComponent; class ATotem;
+class USpringArmComponent; class ATotem; class AAlina_TSNGameMode; class AMyGridManager;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
@@ -41,6 +41,10 @@ class AAlina_TSNCharacter : public ACharacter
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	float GetInteractionPercentage() const;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	float InteractTime;
+	
 
 
 public:
@@ -55,18 +59,37 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int GetScore() const;
 
+	UFUNCTION(BlueprintCallable)
+	int GetHealth() const;
+
+	UFUNCTION(BlueprintCallable)
+	void SetHealth(int value);
+
+	UFUNCTION(BlueprintCallable)
+	void OnInteractionComplete();
+
 	ATotem* CurrentTotem;
 
-	
+	UFUNCTION(BlueprintCallable)
+	bool IsInteractionCompleted() const;
+
+	UFUNCTION()
+	int GetMaxHealth();
+
+	UFUNCTION()
+	int GetTotalOrbs() const;
 
 protected:
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 	void Interact();
 
 	void StopInteract();
+
 			
 
 protected:
@@ -79,8 +102,18 @@ protected:
 
 	int Score;
 
+	int Health;
+	
 	FTimerHandle InteractionTimerHandle;
 
+	AAlina_TSNGameMode* GM;
+
+	AMyGridManager* GridManager;
+	bool bInteractionCompleted;
+
+	int MaxHealth;
+
+	int TotalOrbs;
 
 public:
 	/** Returns CameraBoom subobject **/

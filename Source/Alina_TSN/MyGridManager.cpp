@@ -45,10 +45,8 @@ AMyGridManager::AMyGridManager()
 
 	OrbCount = 5;
 	TotemCount = 1;
-
 	RockCount = 15;
-
-
+	AreaDmgPillarCount = 2;
 }
 
 // Called when the game starts or when spawned
@@ -133,8 +131,7 @@ void AMyGridManager::SpawnAtTile(const FIntPoint& Position, TSubclassOf<AActor> 
 	TargetTile.bIsOccupied = true;
 
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride =
-		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(
 		ActorToSpawn,
@@ -151,10 +148,15 @@ void AMyGridManager::SpawnAtTile(const FIntPoint& Position, TSubclassOf<AActor> 
 
 	FVector Origin, BoxExtent;
 	SpawnedActor->GetActorBounds(false, Origin, BoxExtent);
+	float ActorBottomZ = Origin.Z - BoxExtent.Z;
 
-	FVector AdjustedLocation = TargetTile.WorldLocation;
-	AdjustedLocation.Z += BoxExtent.Z;
-	SpawnedActor->SetActorLocation(AdjustedLocation);
+	float DistancePivotToBottom = SpawnedActor->GetActorLocation().Z - ActorBottomZ;
+
+	FVector FinalLocation = TargetTile.WorldLocation;
+
+	FinalLocation.Z += DistancePivotToBottom;
+
+	SpawnedActor->SetActorLocation(FinalLocation);
 
 	TargetTile.Occupant = SpawnedActor;
 }
@@ -214,7 +216,9 @@ void AMyGridManager::ResetGrid()
 		{
 			if (Actor->IsA(AOrb::StaticClass()) ||
 				Actor->IsA(ATotem::StaticClass()) ||
-				Actor->IsA(RockClass))
+				Actor->IsA(RockClass) ||
+				Actor->IsA(AreaDmgPillarClass) ||
+				Actor->IsA(DamageZoneClass))
 			{
 				Actor->Destroy();
 			}
@@ -244,4 +248,5 @@ void AMyGridManager::SpawnAllGameplayActors()
 	SpawnRandomActors(OrbClass, OrbCount);
 	SpawnRandomActors(TotemClass, TotemCount);
 	SpawnRandomActors(RockClass, RockCount);
+	SpawnRandomActors(AreaDmgPillarClass, AreaDmgPillarCount);
 }

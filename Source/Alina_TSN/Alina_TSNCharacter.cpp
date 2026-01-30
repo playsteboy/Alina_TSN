@@ -52,6 +52,13 @@ AAlina_TSNCharacter::AAlina_TSNCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	InteractTime = 5.f;
+	Score = 0;
+	Health = 3;
+	MaxHealth = Health;
+	TotalOrbs = 0;
+	bInteractionCompleted = false;
+	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -59,6 +66,12 @@ AAlina_TSNCharacter::AAlina_TSNCharacter()
 void AAlina_TSNCharacter::BeginPlay() {
 	Super::BeginPlay();
 	CurrentTotem = Cast<ATotem>(UGameplayStatics::GetActorOfClass(GetWorld(), ATotem::StaticClass()));
+	GM = GetWorld()->GetAuthGameMode<AAlina_TSNGameMode>();
+	GridManager = Cast<AMyGridManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AMyGridManager::StaticClass()));
+	if (GridManager) {
+		TotalOrbs = GridManager->OrbCount;
+	}
+	
 }
 void AAlina_TSNCharacter::NotifyControllerChanged()
 {
@@ -126,17 +139,9 @@ void AAlina_TSNCharacter::Interact()
 
 	if (Score == 5 && CurrentTotem->bIsInZone) {
 		GetCharacterMovement()->DisableMovement();
-
-		AAlina_TSNGameMode* GM = GetWorld()->GetAuthGameMode<AAlina_TSNGameMode>();
 		if (GM)
 		{
-			GetWorldTimerManager().SetTimer(
-				InteractionTimerHandle,
-				GM,
-				&AAlina_TSNGameMode::FinishGame,
-				5.f,
-				false
-			);
+			GetWorldTimerManager().SetTimer(InteractionTimerHandle, this, &AAlina_TSNCharacter::OnInteractionComplete, InteractTime, true);
 		}
 	}
 }
@@ -148,20 +153,68 @@ float AAlina_TSNCharacter::GetInteractionPercentage() const
 	if (GetWorldTimerManager().IsTimerActive(InteractionTimerHandle))
 	{
 		float Remaining = GetWorldTimerManager().GetTimerRemaining(InteractionTimerHandle);
-		float TotalTime = 5.0f;
-		return (TotalTime - Remaining) / TotalTime;
+		return FMath::Clamp((InteractTime - Remaining) / InteractTime, 0.0f, 1.0f);
 	}
 	return 0.0f;
 }
-
 void AAlina_TSNCharacter::StopInteract()
 {
 	if (GetWorldTimerManager().IsTimerActive(InteractionTimerHandle))
 	{
+		bInteractionCompleted = false;
 		GetWorldTimerManager().ClearTimer(InteractionTimerHandle);
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 }
 void AAlina_TSNCharacter::ResetScore() {
 	Score = 0;
+}
+
+void AAlina_TSNCharacter::SetHealth(int value) {
+	Health = value;
+}
+
+int AAlina_TSNCharacter::GetHealth() const {
+	return Health;
+}
+float AAlina_TSNCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	Health -= ActualDamage;
+	if (Health <= 0.0f)
+	{
+		if (GM) {
+			GM->FinishGame();
+		}
+		
+	}
+
+	return ActualDamage;
+}
+
+void AAlina_TSNCharacter::OnInteractionComplete()
+{
+	if (GM)
+	{
+		bInteractionCompleted = true;
+		GM->FinishGame();
+	}
+	if (GetWorldTimerManager().IsTimerActive(InteractionTimerHandle))
+	{
+		GetWorldTimerManager().ClearTimer(InteractionTimerHandle);
+	}
+}
+
+bool AAlina_TSNCharacter::IsInteractionCompleted() const
+{
+	return bInteractionCompleted;
+}
+
+int AAlina_TSNCharacter::GetMaxHealth() {
+	return MaxHealth;
+}
+
+int AAlina_TSNCharacter::GetTotalOrbs() const {
+	return TotalOrbs;
 }
